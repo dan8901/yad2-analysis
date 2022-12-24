@@ -119,6 +119,7 @@ def main():
     # add price range slider, and download all data for all apartment prices
     # add general graphs (day of week, time of day, etc.)
     # download rent data and create purchase_price/rent per city graph
+
     st.title('Real Estate Analysis Tool')
     start_time = st.slider(
         "Select the earliest listing date to analyze.",

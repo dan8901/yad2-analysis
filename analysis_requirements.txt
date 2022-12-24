@@ -1,5 +1,0 @@
-jupyterlab
-pandas
-matplotlib
-openpyxl
-streamlit

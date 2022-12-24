@@ -1,4 +1,5 @@
-httpx
-pydantic
-jinja2
-tqdm
+jupyterlab
+pandas
+matplotlib
+openpyxl
+streamlit
