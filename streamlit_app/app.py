@@ -46,10 +46,11 @@ TYPOS = {
     'בנימינה-גבעת עדה*': 'בנימינה גבעת עדה',
     'מיתר': 'מיתר / כרמית'
 }
+DATA_FILE_PATH = pathlib.Path(__file__).parents[1].resolve().joinpath('all_listings.json')
 
 
 def setup(start_time):
-    all_listings = json.loads(pathlib.Path('../all_listings.json').read_text())
+    all_listings = json.loads(DATA_FILE_PATH.read_text())
     df = pd.DataFrame(all_listings)
     df.date_listed = pd.to_datetime(df.date_listed)
 
