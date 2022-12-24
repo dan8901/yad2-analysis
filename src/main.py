@@ -44,7 +44,7 @@ class Coordinates(pydantic.BaseModel):
 
 
 class Listing(pydantic.BaseModel):
-    date_listed: datetime.date
+    date_listed: datetime.datetime
     city: str
     neighborhood: typing.Optional[str]
     street: typing.Optional[str]
@@ -100,17 +100,16 @@ async def _get_all_listings() -> typing.List[Listing]:
                 response = raw_response.json()
                 for raw_listing in response['data']['feed']['feed_items']:
                     try:
-                        listing = Listing(floor=get_floor(raw_listing),
-                                          rooms=raw_listing['Rooms_text'],
-                                          area=raw_listing['square_meters'],
-                                          city=raw_listing['city'],
-                                          street=raw_listing.get('street'),
-                                          coordinates=raw_listing['coordinates'] or None,
-                                          date_listed=datetime.datetime.fromisoformat(
-                                              raw_listing['date_added']).date(),
-                                          price=int(raw_listing['price'].split(' ')[0].replace(
-                                              ',', '')),
-                                          neighborhood=raw_listing.get('neighborhood'))
+                        listing = Listing(
+                            floor=get_floor(raw_listing),
+                            rooms=raw_listing['Rooms_text'],
+                            area=raw_listing['square_meters'],
+                            city=raw_listing['city'],
+                            street=raw_listing.get('street'),
+                            coordinates=raw_listing['coordinates'] or None,
+                            date_listed=datetime.datetime.fromisoformat(raw_listing['date_added']),
+                            price=int(raw_listing['price'].split(' ')[0].replace(',', '')),
+                            neighborhood=raw_listing.get('neighborhood'))
                         listings.append(listing)
                     except (KeyError, pydantic.ValidationError) as _:
                         pass
