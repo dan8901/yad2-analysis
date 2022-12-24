@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import enum
 import json
@@ -12,6 +13,7 @@ from email.mime.text import MIMEText
 import httpx
 import jinja2
 import pydantic
+from tqdm import tqdm
 
 # API_KEY_PARAM = {'apikey': os.environ['API_KEY']}
 # GMAIL_PASSWORD = os.environ['GMAIL_PASSWORD']
@@ -36,6 +38,12 @@ ALL_LISTINGS_RESULTS_PATH = pathlib.Path('./all_listings.json')
 class RegionCodes(enum.IntEnum):
     SHARON = 19
     HAMERKAZ = 2
+    SHFELA_AND_MISHOR_HAHOF_HADROMI = 41
+    YEHUDA_AND_SHOMRON = 75
+    SOUTH = 43
+    JERUSALEM = 100
+    HADERA_AND_VALLEYS = 101
+    NORTH = 25
 
 
 class Coordinates(pydantic.BaseModel):
@@ -85,34 +93,50 @@ def get_floor(raw_listing):
     raise ValueError('this listing doesn\'t have a floor number')
 
 
+async def _get_total_amount_of_pages(yad2_client: httpx.AsyncClient) -> int:
+    total_amount_of_pages = 0
+    for region_code in RegionCodes:
+        raw_response = await yad2_client.get('/', params=dict(topArea=region_code))
+        raw_response.raise_for_status()
+        response = raw_response.json()
+        total_amount_of_pages += response['data']['pagination']['last_page']
+    return total_amount_of_pages
+
+
 async def _get_all_listings() -> typing.List[Listing]:
     listings = list()
     async with httpx.AsyncClient(base_url=YAD2_API_URL, params=DEFAULT_PARAMS) as yad2_client:
-        for region_code in RegionCodes:
-            raw_response = await yad2_client.get('/', params=dict(topArea=region_code))
-            raw_response.raise_for_status()
-            response = raw_response.json()
-            amount_pages = response['data']['pagination']['last_page']
-            for page in range(amount_pages + 1):
-                raw_response = await yad2_client.get('/',
-                                                     params=dict(topArea=region_code, page=page))
+        total_amount_of_pages = await _get_total_amount_of_pages(yad2_client)
+        with tqdm(total=total_amount_of_pages) as progress_bar:
+            for region_code in RegionCodes:
+                raw_response = await yad2_client.get('/', params=dict(topArea=region_code))
                 raw_response.raise_for_status()
                 response = raw_response.json()
-                for raw_listing in response['data']['feed']['feed_items']:
-                    try:
-                        listing = Listing(
-                            floor=get_floor(raw_listing),
-                            rooms=raw_listing['Rooms_text'],
-                            area=raw_listing['square_meters'],
-                            city=raw_listing['city'],
-                            street=raw_listing.get('street'),
-                            coordinates=raw_listing['coordinates'] or None,
-                            date_listed=datetime.datetime.fromisoformat(raw_listing['date_added']),
-                            price=int(raw_listing['price'].split(' ')[0].replace(',', '')),
-                            neighborhood=raw_listing.get('neighborhood'))
-                        listings.append(listing)
-                    except (KeyError, pydantic.ValidationError) as _:
-                        pass
+                amount_pages = response['data']['pagination']['last_page']
+                for page in range(amount_pages + 1):
+                    raw_response = await yad2_client.get('/',
+                                                         params=dict(topArea=region_code,
+                                                                     page=page))
+                    raw_response.raise_for_status()
+                    response = raw_response.json()
+                    for raw_listing in response['data']['feed']['feed_items']:
+                        try:
+                            listing = Listing(floor=get_floor(raw_listing),
+                                              rooms=raw_listing['Rooms_text'],
+                                              area=raw_listing['square_meters'],
+                                              city=raw_listing['city'],
+                                              street=raw_listing.get('street'),
+                                              coordinates=raw_listing['coordinates'] or None,
+                                              date_listed=datetime.datetime.fromisoformat(
+                                                  raw_listing['date_added']),
+                                              price=int(raw_listing['price'].split(' ')[0].replace(
+                                                  ',', '')),
+                                              neighborhood=raw_listing.get('neighborhood'))
+                            listings.append(listing)
+                        except (KeyError, pydantic.ValidationError) as _:
+                            pass
+                    await asyncio.sleep(0.1)
+                    progress_bar.update()
     return listings
 
 
