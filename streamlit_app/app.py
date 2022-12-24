@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-from .cities import CITIES
+from streamlit_app.cities import CITIES
 
 WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 CENTRAL_BUREAU_OF_STATISTICS_EXCEL_URL = 'https://www.cbs.gov.il/he/publications/LochutTlushim/2020/%D7%90%D7%95%D7%9B%D7%9C%D7%95%D7%A1%D7%99%D7%99%D7%942020.xlsx'
@@ -245,7 +245,3 @@ def graph8(df, city_names_and_populations, *args):
     fig.set_size_inches(max(8, int(cities_df.shape[0] / 2)), 5)
     ax.set_title('Amount of Listings, and the Price per Square Meter, for each City')
     st.pyplot(ax.get_figure())
-
-
-if __name__ == '__main__':
-    main()
