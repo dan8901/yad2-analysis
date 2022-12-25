@@ -13,6 +13,7 @@ from email.mime.text import MIMEText
 import httpx
 import jinja2
 import pydantic
+import tenacity
 from tqdm import tqdm
 
 # API_KEY_PARAM = {'apikey': os.environ['API_KEY']}
@@ -30,7 +31,7 @@ NUMBER_OF_DIGITS_TO_ROUND = 2
 YAD2_API_URL = 'https://gw.yad2.co.il/feed-search-legacy/realestate/forsale'
 DEFAULT_PARAMS = dict(propertyGroup='apartments,houses',
                       property='1,25,3,32,39,4,5,51,55,6,7',
-                      price='1000000-3000000',
+                      price='1000000-12000000',
                       forceLdLoad='true')
 ALL_LISTINGS_RESULTS_PATH = pathlib.Path('./all_listings.json')
 
@@ -109,8 +110,11 @@ async def _get_all_listings() -> typing.List[Listing]:
         total_amount_of_pages = await _get_total_amount_of_pages(yad2_client)
         with tqdm(total=total_amount_of_pages) as progress_bar:
             for region_code in RegionCodes:
-                raw_response = await yad2_client.get('/', params=dict(topArea=region_code))
-                raw_response.raise_for_status()
+                for attempt in tenacity.Retrying(stop=tenacity.stop_after_attempt(3),
+                                                 wait=tenacity.wait_fixed(1)):
+                    with attempt:
+                        raw_response = await yad2_client.get('/', params=dict(topArea=region_code))
+                        raw_response.raise_for_status()
                 response = raw_response.json()
                 amount_pages = response['data']['pagination']['last_page']
                 for page in range(amount_pages + 1):

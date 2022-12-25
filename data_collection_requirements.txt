@@ -2,3 +2,4 @@ httpx
 pydantic
 jinja2
 tqdm
+tenacity

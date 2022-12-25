@@ -49,7 +49,7 @@ TYPOS = {
 DATA_FILE_PATH = pathlib.Path(__file__).parents[1].resolve().joinpath('all_listings.json')
 
 
-def setup(start_time):
+def setup(start_time, price_range):
     all_listings = json.loads(DATA_FILE_PATH.read_text())
     df = pd.DataFrame(all_listings)
     df.date_listed = pd.to_datetime(df.date_listed)
@@ -73,6 +73,7 @@ def setup(start_time):
     df.city_population = df.city_population.astype(int)
 
     # drop erroneous extreme rows to clean data set
+    df = df[(df.price > price_range[0]) & (df.price < price_range[1])]
     df = df[(df.area < df.area.mean() * 5) & (df.area > df.area.mean() / 10)]
     df = df[df.date_listed > start_time]
     listing_count_by_city = df.hebrew_city.value_counts()
@@ -122,6 +123,11 @@ def main():
     # download rent data and create purchase_price/rent per city graph
 
     st.title('Real Estate Analysis Tool')
+    price_range = st.slider('Select the range of prices to analyze.',
+                            1000000,
+                            12000000, (1000000, 3000000),
+                            step=100000,
+                            key='price_range')
     start_time = st.slider(
         "Select the earliest listing date to analyze.",
         min_value=(pd.Timestamp.today() - pd.Timedelta(16, unit='W')).to_pydatetime(),
@@ -129,7 +135,8 @@ def main():
         step=pd.Timedelta(1, unit='W').to_pytimedelta(),
         format="DD/MM/YY",
         key='start_time_select')
-    df, city_names_and_populations = setup(start_time)
+
+    df, city_names_and_populations = setup(start_time, price_range)
 
     selected_cities = select_cities(set(df.english_city.unique()))
     if not selected_cities:
