@@ -123,6 +123,10 @@ def main():
     # download rent data and create purchase_price/rent per city graph
 
     st.title('Real Estate Analysis Tool')
+    st.markdown(
+        'This app was made by [Dan Nissim](https://www.linkedin.com/in/dan-nissim) with data'
+        ' from [yad2.co.il](https://yad2.co.il). Feel free to <a href="mailto:nissim.dan@gmail.com">contact me</a>.',
+        unsafe_allow_html=True)
     price_range = st.slider('Select the range of prices to analyze.',
                             1000000,
                             12000000, (1000000, 3000000),
@@ -145,6 +149,7 @@ def main():
     df = df[df.english_city.isin(selected_cities)]
     # st.write(df.describe())
     # st.write(df.english_city.unique())
+    st.header('Results')
     all_graphs = [graph1, graph2, graph3, graph4, graph5, graph6, graph7, graph8]
     # for graph in all_graphs:
     #     graph(df, city_names_and_populations)
