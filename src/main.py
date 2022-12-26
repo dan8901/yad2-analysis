@@ -79,7 +79,7 @@ class Config(pydantic.BaseModel):
 
 async def main():
     config = Config.parse_obj(json.loads(CONFIG_PATH.read_text()))
-    for_sale_params = DEFAULT_PARAMS | dict(price='1000000-12000000')
+    for_sale_params = DEFAULT_PARAMS | dict(price='300000-12000000')
     rent_params = DEFAULT_PARAMS | dict(price='1000-20000')
     rent_listings = await _get_all_listings(YAD2_RENT_API_URL, rent_params, False)
     for_sale_listings = await _get_all_listings(YAD2_FOR_SALE_API_URL, for_sale_params, True)
