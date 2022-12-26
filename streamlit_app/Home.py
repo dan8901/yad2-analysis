@@ -56,11 +56,13 @@ def main():
 
     df, city_names_and_populations = get_initial_df()
 
-    price_range = st.slider('Select the range of prices to analyze.',
-                            300000,
-                            12000000, (1000000, 3000000),
-                            step=100000,
-                            key='price_range')
+    price_range = st.slider('Select the range of prices to analyze  (in million ₪).',
+                            0.3,
+                            12.0, (1.0, 3.0),
+                            step=0.1,
+                            key='price_range',
+                            format='%f')
+    price_range *= 1000000
     start_time = st.slider(
         "Select the earliest listing date to analyze.",
         min_value=(pd.Timestamp.today() - pd.Timedelta(16, unit='W')).to_pydatetime(),
