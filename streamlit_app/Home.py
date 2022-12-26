@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from streamlit_app.get_initial_df import get_initial_df
+from streamlit_app.other_graphs import other_graphs
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
@@ -56,7 +57,7 @@ def main():
         ' from [yad2.co.il](https://yad2.co.il). Feel free to <a href="mailto:nissim.dan@gmail.com">contact me</a>.',
         unsafe_allow_html=True)
 
-    df, city_names_and_populations = get_initial_df()
+    initial_df, city_names_and_populations = get_initial_df()
 
     unformatted_price_range = st.slider('Select the range of prices to analyze  (in million ₪).',
                                         0.3,
@@ -73,16 +74,17 @@ def main():
         format="DD/MM/YY",
         key='start_time_select')
 
-    df = df[df.date_listed > start_time]
+    df = initial_df[initial_df.date_listed > start_time]
     df = df[(df.price > price_range[0]) & (df.price < price_range[1])]
 
     selected_cities = select_cities(set(df.english_city.unique()))
-    if not selected_cities:
-        return
+    if selected_cities:
+        df = df[df.english_city.isin(selected_cities)]
+        st.header('Results')
+        graph8(df, city_names_and_populations)
 
-    df = df[df.english_city.isin(selected_cities)]
-    st.header('Results')
-    graph8(df, city_names_and_populations)
+    st.header('Other Graphs')
+    other_graphs(initial_df)
 
 
 def graph8(df, city_names_and_populations):
