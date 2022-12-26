@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-from cities import CITIES
+from streamlit_app.cities import CITIES
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parent))
 
