@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import enum
+import itertools
 import json
 import pathlib
 import smtplib
@@ -28,10 +29,10 @@ HTML_PATH = pathlib.Path('./static/email_template.html')
 READABLE_DATETIME_FORMAT = '%B %d, %Y, %H:%M'
 NUMBER_OF_DIGITS_TO_ROUND = 2
 
-YAD2_API_URL = 'https://gw.yad2.co.il/feed-search-legacy/realestate/forsale'
+YAD2_FOR_SALE_API_URL = 'https://gw.yad2.co.il/feed-search-legacy/realestate/forsale'
+YAD2_RENT_API_URL = 'https://gw.yad2.co.il/feed-search-legacy/realestate/rent'
 DEFAULT_PARAMS = dict(propertyGroup='apartments,houses',
                       property='1,25,3,32,39,4,5,51,55,6,7',
-                      price='1000000-12000000',
                       forceLdLoad='true')
 ALL_LISTINGS_RESULTS_PATH = pathlib.Path('./all_listings.json')
 
@@ -62,6 +63,7 @@ class Listing(pydantic.BaseModel):
     rooms: int
     area: int
     price: int
+    for_sale: bool
 
 
 class ContactInfo(pydantic.BaseModel):
@@ -77,7 +79,11 @@ class Config(pydantic.BaseModel):
 
 async def main():
     config = Config.parse_obj(json.loads(CONFIG_PATH.read_text()))
-    listings = await _get_all_listings()
+    for_sale_params = DEFAULT_PARAMS | dict(price='1000000-12000000')
+    rent_params = DEFAULT_PARAMS | dict(price='1000-20000')
+    rent_listings = await _get_all_listings(YAD2_RENT_API_URL, rent_params, False)
+    for_sale_listings = await _get_all_listings(YAD2_FOR_SALE_API_URL, for_sale_params, True)
+    listings = itertools.chain(for_sale_listings, rent_listings)
     ALL_LISTINGS_RESULTS_PATH.write_text(
         json.dumps([listing.dict() for listing in listings], default=str))
     # for quote in quotes:
@@ -104,9 +110,9 @@ async def _get_total_amount_of_pages(yad2_client: httpx.AsyncClient) -> int:
     return total_amount_of_pages
 
 
-async def _get_all_listings() -> typing.List[Listing]:
+async def _get_all_listings(api_url, params, for_sale) -> typing.List[Listing]:
     listings = list()
-    async with httpx.AsyncClient(base_url=YAD2_API_URL, params=DEFAULT_PARAMS) as yad2_client:
+    async with httpx.AsyncClient(base_url=api_url, params=params) as yad2_client:
         total_amount_of_pages = await _get_total_amount_of_pages(yad2_client)
         with tqdm(total=total_amount_of_pages) as progress_bar:
             for region_code in RegionCodes:
@@ -118,10 +124,13 @@ async def _get_all_listings() -> typing.List[Listing]:
                 response = raw_response.json()
                 amount_pages = response['data']['pagination']['last_page']
                 for page in range(amount_pages + 1):
-                    raw_response = await yad2_client.get('/',
-                                                         params=dict(topArea=region_code,
-                                                                     page=page))
-                    raw_response.raise_for_status()
+                    for attempt in tenacity.Retrying(stop=tenacity.stop_after_attempt(3),
+                                                     wait=tenacity.wait_fixed(1)):
+                        with attempt:
+                            raw_response = await yad2_client.get('/',
+                                                                 params=dict(topArea=region_code,
+                                                                             page=page))
+                            raw_response.raise_for_status()
                     response = raw_response.json()
                     for raw_listing in response['data']['feed']['feed_items']:
                         try:
@@ -135,7 +144,8 @@ async def _get_all_listings() -> typing.List[Listing]:
                                                   raw_listing['date_added']),
                                               price=int(raw_listing['price'].split(' ')[0].replace(
                                                   ',', '')),
-                                              neighborhood=raw_listing.get('neighborhood'))
+                                              neighborhood=raw_listing.get('neighborhood'),
+                                              for_sale=for_sale)
                             listings.append(listing)
                         except (KeyError, pydantic.ValidationError) as _:
                             pass
