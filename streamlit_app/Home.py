@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-from streamlit_app.cities import CITIES
-
 sys.path.append(str(pathlib.Path(__file__).resolve().parent))
+
+from streamlit_app.cities import CITIES
 
 CENTRAL_BUREAU_OF_STATISTICS_EXCEL_URL = 'https://www.cbs.gov.il/he/publications/LochutTlushim/2020/%D7%90%D7%95%D7%9B%D7%9C%D7%95%D7%A1%D7%99%D7%99%D7%942020.xlsx'
 MIN_AMOUNT_OF_LISTINGS_IN_CITY = 9
