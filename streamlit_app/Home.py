@@ -80,10 +80,10 @@ def main():
     selected_cities = select_cities(set(df.english_city.unique()))
     if selected_cities:
         df = df[df.english_city.isin(selected_cities)]
-        st.header('Results')
+        st.subheader('Results')
         graph8(df, city_names_and_populations)
 
-    st.header('Other Graphs')
+    st.subheader('Other Graphs')
     other_graphs(initial_df)
 
 
