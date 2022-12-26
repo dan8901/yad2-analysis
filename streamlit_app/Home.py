@@ -11,6 +11,8 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 from streamlit_app.cities import CITIES
 
+MILLION = 1000000
+
 
 def on_region_checkbox_change(region_key, relevant_cities):
     all_other_selected_cities = set(st.session_state.city_multiselect) - CITIES[region_key]
@@ -56,13 +58,13 @@ def main():
 
     df, city_names_and_populations = get_initial_df()
 
-    price_range = st.slider('Select the range of prices to analyze  (in million ₪).',
-                            0.3,
-                            12.0, (1.0, 3.0),
-                            step=0.1,
-                            key='price_range',
-                            format='%f')
-    price_range *= 1000000
+    unformatted_price_range = st.slider('Select the range of prices to analyze  (in million ₪).',
+                                        0.3,
+                                        12.0, (1.0, 3.0),
+                                        step=0.1,
+                                        key='price_range',
+                                        format='%f')
+    price_range = unformatted_price_range[0] * MILLION, unformatted_price_range[1] * MILLION
     start_time = st.slider(
         "Select the earliest listing date to analyze.",
         min_value=(pd.Timestamp.today() - pd.Timedelta(16, unit='W')).to_pydatetime(),
