@@ -3,8 +3,7 @@ import calendar
 import matplotlib
 import pandas as pd
 import streamlit as st
-
-from ..Home import setup
+from streamlit_app.Home import setup
 
 WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
