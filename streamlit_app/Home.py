@@ -2,7 +2,6 @@ import pathlib
 import sys
 
 import matplotlib
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
@@ -52,8 +51,6 @@ def select_cities(relevant_cities):
 
 
 def main():
-    # TODO:
-
     st.title('Real Estate Analysis Tool')
     st.markdown(
         'Share [yad2analysis.com](http://yad2analysis.com) with your friends!<br/>'
@@ -112,7 +109,7 @@ def graph8(df, *args):
     plot.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1))
     plot.set_xlabel(None)
     plot.set_title('Annual Yield From Rent')
-    plot.get_figure().set_size_inches(max(8, int(res.shape[0] / 2)), 5)
+    plot.get_figure().set_size_inches(min(30, max(8, int(res.shape[0] / 2))), 5)
     return plot.get_figure()
 
 
@@ -136,7 +133,7 @@ def graph9(df, city_names_and_populations, *args):
     plot.legend(loc='upper right')
     plot.set_xlabel(None)
     plot.axhline(y=median_amount_of_listings_per_100k_residents, color='orange', linestyle='--')
-    plot.get_figure().set_size_inches(max(8, int(cities_df.shape[0] / 2)), 5)
+    plot.get_figure().set_size_inches(min(30, max(8, int(cities_df.shape[0] / 2))), 5)
     plot.set_title('Amount of Listings')
     return plot.get_figure()
 
@@ -151,7 +148,7 @@ def graph10(df, *args):
     plot.axhline(y=prices_per_sqm.median(), linestyle='--')
     plot.set_xlabel(None)
     plot.set_title('Price per Square Meter')
-    plot.get_figure().set_size_inches(max(8, int(prices_per_sqm.shape[0] / 2)), 5)
+    plot.get_figure().set_size_inches(min(30, max(8, int(prices_per_sqm.shape[0] / 2))), 5)
     return plot.get_figure()
 
 
