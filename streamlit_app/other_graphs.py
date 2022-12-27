@@ -3,6 +3,7 @@ import pathlib
 import sys
 
 import matplotlib
+import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
@@ -12,7 +13,6 @@ WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 
 
 def other_graphs(df):
-    # df, _ = get_initial_df()
     tabs = st.tabs(['Area', 'Price', 'Date', 'Day of Week', 'Rooms', 'Time of Day', 'Floor'])
     graphs = [graph1, graph2, graph3, graph4, graph5, graph6, graph7]
     for i, tab in enumerate(tabs):
@@ -22,6 +22,7 @@ def other_graphs(df):
 
 @st.experimental_memo
 def graph1(df):
+    plt.clf()
     plot = df[df.area < 200].area.hist(bins=30, figsize=(5, 3), grid=False)
     plot.get_yaxis().set_visible(False)
     plot.set_xlabel('Area $m^2$')
