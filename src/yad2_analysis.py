@@ -50,7 +50,7 @@ def select_cities(relevant_cities):
 
 
 def main():
-    df = pd.read_csv(ALL_LISTINGS_FILE_PATH, parse_dates=['date_listed'])
+    df = load_listings_csv()
     listings_last_modified_time = datetime.fromtimestamp(ALL_LISTINGS_FILE_PATH.stat().st_mtime).strftime('%B %e, %Y')
 
     st.title('Yad2 Real Estate Analysis Tool')
@@ -92,8 +92,13 @@ def main():
     st.markdown('<br/><br/>', unsafe_allow_html=True)
 
     st.subheader('Other Graphs')
-    st.markdown('These are based on all of the listings for sale on yad2, regardless of the filters.')
+    st.markdown('These are based on all of the listings for sale on Yad2, regardless of the filters.')
     other_graphs(df)
+
+
+@st.cache_data
+def load_listings_csv():
+    return pd.read_csv(ALL_LISTINGS_FILE_PATH, parse_dates=['date_listed'])
 
 
 def graph8(df):
