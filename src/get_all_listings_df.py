@@ -188,6 +188,4 @@ def get_initial_df(all_listings):
 
 
 if __name__ == '__main__':
-    get_initial_df(json.loads(pathlib.Path('./all_listings.json').read_text()))\
-        .to_csv('./all_listings.csv', index=False)
-    # asyncio.run(get_all_listings_df())
+    asyncio.run(get_all_listings_df())

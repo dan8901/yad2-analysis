@@ -62,7 +62,7 @@ def main():
         'This app was made by [Dan Nissim](https://www.linkedin.com/in/dan-nissim) with data'
         ' from [yad2.co.il](https://yad2.co.il). Feel free to <a href="mailto:nissim.dan@gmail.com">contact me</a>.',
         unsafe_allow_html=True)
-    st.markdown('<br/><br/>', unsafe_allow_html=True)
+    st.markdown('<br/>', unsafe_allow_html=True)
 
     st.subheader('Filters')
     unformatted_price_range = st.slider('Select the range of prices to analyze, in million ₪.',
