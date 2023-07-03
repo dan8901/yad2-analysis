@@ -41,6 +41,7 @@ def select_cities(relevant_cities):
                     key=region,
                     on_change=on_region_checkbox_change,
                     args=(region, relevant_cities))
+    st.markdown('<br/>', unsafe_allow_html=True)
     return st.multiselect(
         'Or, select the cities you would like to analyze.',
         list(relevant_cities),
@@ -66,10 +67,11 @@ def main():
         unsafe_allow_html=True)
     st.markdown('<br/>', unsafe_allow_html=True)
 
-    st.subheader('Filters')
+    st.subheader('Cities Selection')
 
     selected_cities = select_cities(set(df.english_city.unique()))
 
+    st.markdown('<br/>', unsafe_allow_html=True)
     unformatted_price_range = st.slider('Select the range of prices to analyze, in million ₪.',
                                         0.6,
                                         20.0, (0.6, 20.0),
@@ -99,9 +101,8 @@ def main():
     st.dataframe(houses_by_the_beach(complete_df))
     st.markdown('<br/><br/>', unsafe_allow_html=True)
 
-    st.subheader('Other Graphs')
-    st.markdown(
-        'These are based on all of the listings for sale on Yad2, regardless of the filters.')
+    st.subheader('More Graphs')
+    st.markdown('These are based on all of the listings on Yad2.')
     other_graphs(complete_df)
 
 
