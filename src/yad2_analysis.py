@@ -67,6 +67,9 @@ def main():
     st.markdown('<br/>', unsafe_allow_html=True)
 
     st.subheader('Filters')
+
+    selected_cities = select_cities(set(df.english_city.unique()))
+
     unformatted_price_range = st.slider('Select the range of prices to analyze, in million ₪.',
                                         0.6,
                                         20.0, (0.6, 20.0),
@@ -74,10 +77,8 @@ def main():
                                         key='price_range',
                                         format='%f')
     price_range = unformatted_price_range[0] * MILLION, unformatted_price_range[1] * MILLION
-
     df = df[(df.price > price_range[0]) & (df.price < price_range[1]) | ~df.for_sale]
 
-    selected_cities = select_cities(set(df.english_city.unique()))
     st.markdown('<br/><br/>', unsafe_allow_html=True)
 
     st.subheader('Results')
