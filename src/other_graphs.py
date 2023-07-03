@@ -13,8 +13,9 @@ WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 
 
 def other_graphs(df):
-    tabs = st.tabs(['Area', 'Price', 'Date', 'Day of Week', 'Rooms', 'Time of Day', 'Floor'])
-    graphs = [graph1, graph2, graph3, graph4, graph5, graph6, graph7]
+    tabs = st.tabs(
+        ['Area', 'Price', 'Date', 'Day of Week', 'Rooms', 'Time of Day', 'Floor', 'Property Types'])
+    graphs = [graph1, graph2, graph3, graph4, graph5, graph6, graph7, graph8]
     for i, tab in enumerate(tabs):
         with tab:
             st.pyplot(graphs[i](df), True)
@@ -90,4 +91,15 @@ def graph7(df):
     plot.set_xlabel('Floor number')
     plot.set_ylabel('Amount of Listings')
     plot.set_title('Distribution of Floor Number')
+    return plot.get_figure()
+
+
+@st.cache_data
+def graph8(df):
+    temp_df = df.copy()
+    temp_df.property_type = temp_df.property_type.apply(lambda x: x[::-1])
+    plot = temp_df.property_type.value_counts().sort_index().plot.bar(figsize=(5, 3))
+    plot.set_xlabel('Property Type')
+    plot.set_ylabel('Amount of Listings')
+    plot.set_title('Distribution of Property Types')
     return plot.get_figure()

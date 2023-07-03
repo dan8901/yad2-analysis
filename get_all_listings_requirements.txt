@@ -3,3 +3,5 @@ httpx
 pydantic
 tqdm
 tenacity
+pandas
+numpy

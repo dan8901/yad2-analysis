@@ -5,7 +5,6 @@ from datetime import datetime
 import matplotlib
 import pandas as pd
 import numpy as np
-
 import streamlit as st
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
@@ -16,6 +15,7 @@ MILLION = 1000000
 MIN_IN_EACH_BIN = 3
 MAX_AMOUNT_OF_BINS = 10
 ALL_LISTINGS_FILE_PATH = pathlib.Path('./all_listings.csv')
+MIN_AMOUNT_OF_LISTINGS_IN_CITY = 9
 
 
 def on_region_checkbox_change(region_key, relevant_cities):
@@ -50,8 +50,10 @@ def select_cities(relevant_cities):
 
 
 def main():
-    df = load_listings_csv()
-    listings_last_modified_time = datetime.fromtimestamp(ALL_LISTINGS_FILE_PATH.stat().st_mtime).strftime('%B %e, %Y')
+    complete_df = load_listings_csv()
+    df = clean_unknown_cities(complete_df)
+    listings_last_modified_time = datetime.fromtimestamp(ALL_LISTINGS_FILE_PATH.stat().st_mtime)\
+        .strftime('%B %e, %Y')
 
     st.title('Yad2 Real Estate Analysis Tool')
     st.markdown('<br/>', unsafe_allow_html=True)
@@ -81,7 +83,8 @@ def main():
     st.subheader('Results')
     if selected_cities:
         df = df[df.english_city.isin(selected_cities)]
-        tabs = st.tabs(['Rent Yield', 'Amount of Listings', 'Price per m²', 'For Sale Data', 'For Rent Data'])
+        tabs = st.tabs(
+            ['Rent Yield', 'Amount of Listings', 'Price per m²', 'For Sale Data', 'For Rent Data'])
         graphs = [graph8, graph9, graph10, graph11, graph12]
         for i, tab in enumerate(tabs):
             with tab:
@@ -91,14 +94,33 @@ def main():
 
     st.markdown('<br/><br/>', unsafe_allow_html=True)
 
+    st.subheader('Recent Houses By the Beach')
+    st.dataframe(houses_by_the_beach(complete_df))
+    st.markdown('<br/><br/>', unsafe_allow_html=True)
+
     st.subheader('Other Graphs')
-    st.markdown('These are based on all of the listings for sale on Yad2, regardless of the filters.')
-    other_graphs(df)
+    st.markdown(
+        'These are based on all of the listings for sale on Yad2, regardless of the filters.')
+    other_graphs(complete_df)
 
 
 @st.cache_data
 def load_listings_csv():
     return pd.read_csv(ALL_LISTINGS_FILE_PATH, parse_dates=['date_listed'])
+
+
+@st.cache_data
+def clean_unknown_cities(df):
+    # About 1% of listings are in cities with a population of less than 2000,
+    # for simplicity we'll ignore them
+    df = df[~df.english_city.isna()]
+    listing_count_by_city = df.city.value_counts()
+    cities_to_ignore = set(
+        listing_count_by_city.
+        loc[lambda listing_count: listing_count < MIN_AMOUNT_OF_LISTINGS_IN_CITY].index)
+    df = df[~df.city.isin(cities_to_ignore)]
+    df = df.reset_index(drop=True)
+    return df
 
 
 def graph8(df):
@@ -120,6 +142,8 @@ def graph8(df):
     plot.set_title('Annual Yield From Rent')
     plot.get_figure().set_size_inches(min(30, max(8, int(res.shape[0] / 2))), 5)
     st.pyplot(plot.get_figure(), True)
+    st.markdown('This depicts the average rent price of apartments compared to the average selling'
+                ' price of apartments in the same city that also have a similar area.')
 
 
 def graph9(df):
@@ -128,7 +152,7 @@ def graph9(df):
     cities_df = df.english_city.value_counts()
     cities_df.name = 'amount_of_listings'
     city_names_and_populations = df.drop_duplicates(subset='english_city')\
-        [['english_city', 'hebrew_city', 'city_population']].reset_index(drop=True)
+        [['english_city', 'city', 'city_population']].reset_index(drop=True)
     cities_df = cities_df.to_frame().merge(city_names_and_populations,
                                            left_index=True,
                                            right_on='english_city')
@@ -163,19 +187,47 @@ def graph10(df):
     plot.get_figure().set_size_inches(min(30, max(8, int(prices_per_sqm.shape[0] / 2))), 5)
     st.pyplot(plot.get_figure(), True)
 
+
 def graph11(df):
     df = df[df.for_sale].describe()
-    df = df.round({'area': 0, 'price': 0, 'city_population': 0, 'floor': 1, 'rooms': 1})
-    df['date_listed'] = df['date_listed'].apply(
-        lambda x: x.strftime('%B %e, %Y') if isinstance(x, pd.Timestamp) else x)
+    df = df.round({
+        'area': 0,
+        'price': 0,
+        'city_population': 0,
+        'distance_from_beach': 0,
+        'floor': 1,
+        'rooms': 1
+    })
+    df['date_listed'] = df['date_listed'].apply(lambda x: x.strftime('%B %e, %Y')
+                                                if isinstance(x, pd.Timestamp) else x)
     st.dataframe(df)
+
 
 def graph12(df):
     df = df[~df.for_sale].describe()
-    df = df.round({'area': 0, 'price': 0, 'city_population': 0, 'floor': 1, 'rooms': 1})
-    df['date_listed'] = df['date_listed'].apply(
-        lambda x: x.strftime('%B %e, %Y') if isinstance(x, pd.Timestamp) else x)
+    df = df.round({
+        'area': 0,
+        'price': 0,
+        'city_population': 0,
+        'distance_from_beach': 0,
+        'floor': 1,
+        'rooms': 1
+    })
+    df['date_listed'] = df['date_listed'].apply(lambda x: x.strftime('%B %e, %Y')
+                                                if isinstance(x, pd.Timestamp) else x)
     st.dataframe(df)
+
+
+@st.cache_data
+def houses_by_the_beach(df):
+    df.distance_from_beach = df.distance_from_beach.apply(lambda x: round(x / 50) * 50)
+    return df[df.property_type.isin(('בית פרטי/קוטג\'', 'דופלקס', 'דו משפחתי'))
+              & (df.distance_from_beach < 700)
+              & (df.area < 240)
+              & (df.date_listed >
+                 (pd.Timestamp.today() - pd.Timedelta(4, unit='W')).to_pydatetime())][[
+                     'price', 'city', 'area', 'distance_from_beach', 'link'
+                 ]].reset_index(drop=True)
 
 
 if __name__ == '__main__':

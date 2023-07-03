@@ -2,23 +2,22 @@ import asyncio
 import datetime
 import enum
 import itertools
-import json
-import pathlib
 import typing
 
 import httpx
+import pandas as pd
 import pydantic
 import tenacity
 from tqdm import tqdm
-import pandas as pd
+
+from src.distance_from_beach import DistanceFromBeach
 
 YAD2_FOR_SALE_API_URL = 'https://gw.yad2.co.il/feed-search-legacy/realestate/forsale'
 YAD2_RENT_API_URL = 'https://gw.yad2.co.il/feed-search-legacy/realestate/rent'
 DEFAULT_PARAMS = dict(propertyGroup='apartments,houses',
-                      property='1,25,3,32,39,4,5,51,55,6,7',
+                      property='1,25,3,39,4,5,51,6,7',
                       forceLdLoad='true')
 CENTRAL_BUREAU_OF_STATISTICS_EXCEL_URL = 'https://www.cbs.gov.il/he/publications/LochutTlushim/2020/%D7%90%D7%95%D7%9B%D7%9C%D7%95%D7%A1%D7%99%D7%99%D7%942020.xlsx'
-MIN_AMOUNT_OF_LISTINGS_IN_CITY = 9
 TYPOS = {
     'תל אביב -יפו': 'תל אביב יפו',
     'הרצלייה': 'הרצליה',
@@ -63,22 +62,20 @@ class RegionCodes(enum.IntEnum):
     NORTH = 25
 
 
-class Coordinates(pydantic.BaseModel):
-    latitude: float
-    longitude: float
-
-
 class Listing(pydantic.BaseModel):
     date_listed: datetime.datetime
     city: str
     neighborhood: typing.Optional[str]
     street: typing.Optional[str]
-    coordinates: typing.Optional[Coordinates]
+    coordinates: typing.Optional[typing.Tuple[float, float]]
     floor: int
     rooms: int
     area: int
     price: int
     for_sale: bool
+    distance_from_beach: int
+    property_type: str
+    link: str
 
 
 async def get_all_listings_df():
@@ -86,8 +83,10 @@ async def get_all_listings_df():
     rent_params = DEFAULT_PARAMS | dict(price='1500-30000')
     rent_listings = await _get_all_listings(YAD2_RENT_API_URL, rent_params, False)
     for_sale_listings = await _get_all_listings(YAD2_FOR_SALE_API_URL, for_sale_params, True)
-    all_listings = (listing.dict() for listing in itertools.chain(for_sale_listings, rent_listings))
-    get_initial_df(all_listings).to_csv('./all_listings.csv', index=False)
+    all_listings = (listing.model_dump()
+                    for listing in itertools.chain(for_sale_listings, rent_listings))
+    pd.DataFrame(all_listings).to_csv('../preprocessed_listings.csv', index=False)
+    get_initial_df(all_listings).to_csv('../all_listings.csv', index=False)
 
 
 def get_floor(raw_listing):
@@ -111,6 +110,7 @@ async def _get_total_amount_of_pages(yad2_client: httpx.AsyncClient) -> int:
 
 async def _get_all_listings(api_url, params, for_sale) -> typing.List[Listing]:
     listings = list()
+    distance_calculator = DistanceFromBeach()
     async with httpx.AsyncClient(base_url=api_url, params=params) as yad2_client:
         total_amount_of_pages = await _get_total_amount_of_pages(yad2_client)
         with tqdm(total=total_amount_of_pages) as progress_bar:
@@ -133,18 +133,25 @@ async def _get_all_listings(api_url, params, for_sale) -> typing.List[Listing]:
                     response = raw_response.json()
                     for raw_listing in response['data']['feed']['feed_items']:
                         try:
-                            listing = Listing(floor=get_floor(raw_listing),
-                                              rooms=raw_listing['Rooms_text'],
-                                              area=raw_listing['square_meters'],
-                                              city=raw_listing['city'],
-                                              street=raw_listing.get('street'),
-                                              coordinates=raw_listing['coordinates'] or None,
-                                              date_listed=datetime.datetime.fromisoformat(
-                                                  raw_listing['date_added']),
-                                              price=int(raw_listing['price'].split(' ')[0].replace(
-                                                  ',', '')),
-                                              neighborhood=raw_listing.get('neighborhood'),
-                                              for_sale=for_sale)
+                            coordinates = (raw_listing['coordinates']['latitude'],
+                                           raw_listing['coordinates']['longitude'])\
+                                if raw_listing['coordinates'] else None
+                            listing = Listing(
+                                floor=get_floor(raw_listing),
+                                rooms=raw_listing['Rooms_text'],
+                                area=raw_listing['square_meters'],
+                                city=raw_listing['city'],
+                                street=raw_listing.get('street'),
+                                coordinates=coordinates,
+                                date_listed=datetime.datetime.fromisoformat(
+                                    raw_listing['date_added']),
+                                price=int(raw_listing['price'].split(' ')[0].replace(',', '')),
+                                neighborhood=raw_listing.get('neighborhood'),
+                                for_sale=for_sale,
+                                distance_from_beach=distance_calculator.calculate(coordinates)
+                                if coordinates else None,
+                                property_type=raw_listing['HomeTypeID_text'],
+                                link=f'https://www.yad2.co.il/item/{raw_listing["link_token"]}')
                             listings.append(listing)
                         except (KeyError, pydantic.ValidationError) as _:
                             pass
@@ -169,23 +176,20 @@ def get_initial_df(all_listings):
     city_names_and_populations = city_names_and_populations.replace(TYPOS)
 
     df = df.merge(city_names_and_populations, left_on='city', right_on='hebrew_city', how='left')
-    df = df.drop('city', axis=1)
-    # About 1% of listings are in cities with a population of less than 2000,
-    # for simplicity we'll ignore them
-    df = df.dropna()
-    df.city_population = df.city_population.astype(int)
-
+    df = df.drop('hebrew_city', axis=1)
     # drop erroneous extreme rows to clean data set
     df = df[df.date_listed > (pd.Timestamp.today() - pd.Timedelta(16, unit='W')).to_pydatetime()]
     df = df[(df.area < df.area.mean() * 5) & (df.area > df.area.mean() / 10)]
-    listing_count_by_city = df.hebrew_city.value_counts()
-    cities_to_ignore = set(
-        listing_count_by_city.
-        loc[lambda listing_count: listing_count < MIN_AMOUNT_OF_LISTINGS_IN_CITY].index)
-    df = df[~df.hebrew_city.isin(cities_to_ignore)]
+    df.city_population = df.city_population.round().astype('Int64')
+    df.drop_duplicates(subset='link', keep='first', inplace=True)
     df = df.reset_index(drop=True)
+    # TODO: instead of ignoring them here, ignore them only in the graphs that assume this.
+    # TODO: add information about title 2 : property type - cottage, apartment, etc...
     return df
 
 
 if __name__ == '__main__':
     asyncio.run(get_all_listings_df())
+    # get_initial_df(pd.read_csv('../preprocessed_listings.csv',
+    #                            parse_dates=['date_listed'])).to_csv('../all_listings.csv',
+    #                                                                 index=False)
