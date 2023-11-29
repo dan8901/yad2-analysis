@@ -53,14 +53,12 @@ def select_cities(relevant_cities):
 def main():
     complete_df = load_listings_csv()
     df = clean_unknown_cities(complete_df)
-    listings_last_modified_time = datetime.fromtimestamp(ALL_LISTINGS_FILE_PATH.stat().st_mtime)\
-        .strftime('%B %e, %Y')
 
     st.title('Yad2 Real Estate Analysis Tool')
     st.markdown('<br/>', unsafe_allow_html=True)
     st.markdown(
         'Below is a comprehensive analysis of all the listings currently in Yad2. Enjoy!<br/>'
-        f'A total of {len(df):,} listings have been analyzed. Last updated on {listings_last_modified_time}.<br/>'
+        f'A total of {len(df):,} listings have been analyzed. Last updated on November 29, 2023.<br/>'
         'Share [yad2analysis.com](http://yad2analysis.com) with your friends!<br/>'
         'This app was made by [Dan Nissim](https://www.linkedin.com/in/dan-nissim) with data'
         ' from [yad2.co.il](https://yad2.co.il). Feel free to <a href="mailto:nissim.dan@gmail.com">contact me</a>.',
@@ -226,8 +224,8 @@ def houses_by_the_beach(df):
     return df[df.property_type.isin(('בית פרטי/קוטג\'', 'דופלקס', 'דו משפחתי'))
               & (df.distance_from_beach < 700)
               & (df.area < 240)
-              & (df.date_listed >
-                 (pd.Timestamp.today() - pd.Timedelta(4, unit='W')).to_pydatetime())][[
+              & (df.date_listed
+                 > (pd.Timestamp.today() - pd.Timedelta(4, unit='W')).to_pydatetime())][[
                      'price', 'city', 'area', 'distance_from_beach', 'link'
                  ]].reset_index(drop=True)
 

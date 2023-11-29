@@ -165,7 +165,7 @@ def get_initial_df(all_listings):
     df.date_listed = pd.to_datetime(df.date_listed)
 
     city_names_and_populations = pd.read_excel(CENTRAL_BUREAU_OF_STATISTICS_EXCEL_URL,
-                                               usecols='C,L,M',
+                                               usecols='C,I,H',
                                                keep_default_na=False,
                                                skipfooter=7,
                                                header=7)
@@ -180,7 +180,7 @@ def get_initial_df(all_listings):
     # drop erroneous extreme rows to clean data set
     df = df[df.date_listed > (pd.Timestamp.today() - pd.Timedelta(16, unit='W')).to_pydatetime()]
     df = df[(df.area < df.area.mean() * 5) & (df.area > df.area.mean() / 10)]
-    df.city_population = df.city_population.round().astype('Int64')
+    df.city_population = df.city_population.astype(float).round().astype('Int64')
     df.drop_duplicates(subset='link', keep='first', inplace=True)
     df = df.reset_index(drop=True)
     # TODO: instead of ignoring them here, ignore them only in the graphs that assume this.
