@@ -43,3 +43,9 @@ CITIES = {
         'Hazor HaGelilit', 'Kefar Weradim', 'Nazareth', 'Kefar Tavor', 'Nofit', 'Rosh Pinna'
     }
 }
+
+LARGE_CITIES = {
+    'Tel Aviv - Yafo', 'Petah Tiqwa', 'Bene Beraq', 'Jerusalem', 'Haifa', 'Bet Shemesh', 'Ashqelon',
+    'Rishon LeZiyyon', 'Netanya', 'Ashdod', 'Be\'er Sheva', 'Holon', 'Ramat Gan', 'Rehovot',
+    'Bat Yam'
+}

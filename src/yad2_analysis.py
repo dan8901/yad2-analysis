@@ -1,15 +1,14 @@
 import pathlib
 import sys
-from datetime import datetime
 
 import matplotlib
-import pandas as pd
 import numpy as np
+import pandas as pd
 import streamlit as st
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+from src.cities import CITIES, LARGE_CITIES
 from src.other_graphs import other_graphs
-from src.cities import CITIES
 
 MILLION = 1000000
 MIN_IN_EACH_BIN = 3
@@ -40,12 +39,13 @@ def select_cities(relevant_cities):
         st.checkbox(region,
                     key=region,
                     on_change=on_region_checkbox_change,
-                    args=(region, relevant_cities))
+                    args=(region, relevant_cities),
+                    value=LARGE_CITIES & CITIES[region])
     st.markdown('<br/>', unsafe_allow_html=True)
     return st.multiselect(
         'Or, select the cities you would like to analyze.',
         list(relevant_cities),
-        default=list(set(st.session_state.get('city_multiselect', {})) & relevant_cities),
+        default=list(set(st.session_state.get('city_multiselect', LARGE_CITIES)) & relevant_cities),
         key='city_multiselect',
         on_change=on_city_multiselect_change)
 
