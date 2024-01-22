@@ -58,7 +58,7 @@ def main():
     st.markdown('<br/>', unsafe_allow_html=True)
     st.markdown(
         'Below is a comprehensive analysis of all the listings currently in Yad2. Enjoy!<br/>'
-        f'A total of {len(df):,} listings have been analyzed. Last updated on November 29, 2023.<br/>'
+        f'A total of {len(df):,} listings have been analyzed. Last updated on January 22, 2024.<br/>'
         'Share [yad2analysis.com](http://yad2analysis.com) with your friends!<br/>'
         'This app was made by [Dan Nissim](https://www.linkedin.com/in/dan-nissim) with data'
         ' from [yad2.co.il](https://yad2.co.il). Feel free to <a href="mailto:nissim.dan@gmail.com">contact me</a>.',
@@ -132,7 +132,7 @@ def graph8(df):
 
     y = pd.concat(dfs).groupby(['english_city', 'area_bin', 'for_sale']) \
         .agg({'price': ['mean', 'count']}).unstack().dropna().reset_index()
-    res = y.groupby('english_city').apply(
+    res = y.groupby('english_city', observed=True).apply(
         lambda z: np.average(z['price']['mean'][False] * 12 / z['price']['mean'][True],
                              weights=z['price']['count'][False] + z['price']['count'][True]))
     plot = res.plot.bar()

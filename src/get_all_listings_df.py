@@ -162,7 +162,7 @@ async def _get_all_listings(api_url, params, for_sale) -> typing.List[Listing]:
 
 def get_initial_df(all_listings):
     df = pd.DataFrame(all_listings)
-    df.date_listed = pd.to_datetime(df.date_listed)
+    df.date_listed = pd.to_datetime(df['date_listed'])
 
     city_names_and_populations = pd.read_excel(CENTRAL_BUREAU_OF_STATISTICS_EXCEL_URL,
                                                usecols='C,I,H',
