@@ -79,6 +79,11 @@ class Listing(pydantic.BaseModel):
 
 
 async def get_all_listings_df():
+    await save_preprocessed_listings()
+    get_initial_df().to_csv('../all_listings.csv', index=False)
+
+
+async def save_preprocessed_listings():
     for_sale_params = DEFAULT_PARAMS | dict(price='600000-20000000')
     rent_params = DEFAULT_PARAMS | dict(price='1500-30000')
     rent_listings = await _get_all_listings(YAD2_RENT_API_URL, rent_params, False)
@@ -86,7 +91,6 @@ async def get_all_listings_df():
     all_listings = (listing.model_dump()
                     for listing in itertools.chain(for_sale_listings, rent_listings))
     pd.DataFrame(all_listings).to_csv('../preprocessed_listings.csv', index=False)
-    get_initial_df(all_listings).to_csv('../all_listings.csv', index=False)
 
 
 def get_floor(raw_listing):
@@ -160,12 +164,12 @@ async def _get_all_listings(api_url, params, for_sale) -> typing.List[Listing]:
     return listings
 
 
-def get_initial_df(all_listings):
-    df = pd.DataFrame(all_listings)
+def get_initial_df():
+    df = pd.read_csv('../preprocessed_listings.csv')
     df.date_listed = pd.to_datetime(df['date_listed'])
 
     city_names_and_populations = pd.read_excel(CENTRAL_BUREAU_OF_STATISTICS_EXCEL_URL,
-                                               usecols='C,I,H',
+                                               usecols='C,H,M',
                                                keep_default_na=False,
                                                skipfooter=7,
                                                header=7)
