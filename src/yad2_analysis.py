@@ -54,13 +54,13 @@ def main():
     complete_df = load_listings_csv()
     df = clean_unknown_cities(complete_df)
 
-    st.title('Yad2 Real Estate Analysis Tool')
+    st.title('Yad2 Real Estate Analysis')
     st.markdown('<br/>', unsafe_allow_html=True)
     st.markdown(
-        'Below is a comprehensive analysis of all the listings currently in Yad2. Enjoy!<br/>'
-        f'A total of {len(df):,} listings have been analyzed. Last updated on April 25th, 2024.<br/>'
+        'Here is a detailed analysis of all current listings on Yad2. Enjoy!<br/>'
+        f'A total of {len(df):,} listings have been analyzed. Last updated on September 24th, 2024.<br/>'
         'Share [yad2analysis.com](http://yad2analysis.com) with your friends!<br/>'
-        'This app was made by [Dan Nissim](https://www.linkedin.com/in/dan-nissim) with data'
+        'This app was created by [Dan Nissim](https://www.linkedin.com/in/dan-nissim) using data'
         ' from [yad2.co.il](https://yad2.co.il). Feel free to <a href="mailto:nissim.dan@gmail.com">contact me</a>.',
         unsafe_allow_html=True)
     st.markdown('<br/>', unsafe_allow_html=True)
