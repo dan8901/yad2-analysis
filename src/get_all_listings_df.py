@@ -169,7 +169,7 @@ def get_initial_df():
     df.date_listed = pd.to_datetime(df['date_listed'])
 
     city_names_and_populations = pd.read_excel(CENTRAL_BUREAU_OF_STATISTICS_EXCEL_URL,
-                                               usecols='C,H,M',
+                                               usecols='C,H,J',
                                                keep_default_na=False,
                                                skipfooter=7,
                                                header=7)

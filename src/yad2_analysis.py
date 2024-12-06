@@ -58,7 +58,7 @@ def main():
     st.markdown('<br/>', unsafe_allow_html=True)
     st.markdown(
         'Here is a detailed analysis of all current listings on Yad2. Enjoy!<br/>'
-        f'A total of {len(df):,} listings have been analyzed. Last updated on September 24th, 2024.<br/>'
+        f'A total of {len(df):,} listings have been analyzed. Last updated on December 6th, 2024.<br/>'
         'Share [yad2analysis.com](http://yad2analysis.com) with your friends!<br/>'
         'This app was created by [Dan Nissim](https://www.linkedin.com/in/dan-nissim) using data'
         ' from [yad2.co.il](https://yad2.co.il). Feel free to <a href="mailto:nissim.dan@gmail.com">contact me</a>.',
